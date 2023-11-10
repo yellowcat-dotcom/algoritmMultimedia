@@ -1,0 +1,90 @@
+#include <iostream>
+#include <vector>
+#include <cmath>
+
+using namespace std;
+
+// Функция для вычисления значения Гауссова ядра
+double gauss(double x, double y, double omega) {
+    double omegaIn2 = 2 * pow(omega, 2);
+    return exp(-(x * x + y * y) / omegaIn2) / (M_PI * omegaIn2);
+}
+
+// Функция для применения размытия Гаусса к изображению
+vector<vector<int>> MyGaussianBlur(vector<vector<int>> img, int kernel_size, double standard_deviation) {
+    int image_width = img[0].size();
+    int image_height = img.size();
+    
+    // Создаем ядро Гауссова фильтра и вычисляем его сумму
+    vector<vector<double>> kernel(kernel_size, vector<double>(kernel_size));
+    double kernel_sum = 0.0;
+    
+    for (int i = 0; i < kernel_size; i++) {
+        for (int j = 0; j < kernel_size; j++) {
+            int x = i - kernel_size / 2;
+            int y = j - kernel_size / 2;
+            kernel[i][j] = gauss(x, y, standard_deviation);
+            kernel_sum += kernel[i][j];
+        }
+    }
+
+    // Нормализуем ядро
+    for (int i = 0; i < kernel_size; i++) {
+        for (int j = 0; j < kernel_size; j++) {
+            kernel[i][j] /= kernel_sum;
+        }
+    }
+
+    // Применяем размытие Гаусса к изображению
+    vector<vector<int>> blurred_img(image_height, vector<int>(image_width, 0));
+    
+    for (int y = 0; y < image_height; y++) {
+        for (int x = 0; x < image_width; x++) {
+            double pixel_value = 0.0;
+            
+            for (int i = 0; i < kernel_size; i++) {
+                for (int j = 0; j < kernel_size; j++) {
+                    int img_x = x - kernel_size / 2 + i;
+                    int img_y = y - kernel_size / 2 + j;
+
+                    // Проверяем, находится ли пиксель в пределах изображения
+                    if (img_x >= 0 && img_x < image_width && img_y >= 0 && img_y < image_height) {
+                        pixel_value += img[img_y][img_x] * kernel[i][j];
+                    }
+                }
+            }
+
+            blurred_img[y][x] = static_cast<int>(pixel_value);
+        }
+    }
+
+    return blurred_img;
+}
+
+int main() {
+    vector<vector<int>> input_image = {
+        {50, 50, 50, 60, 60, 10, 60, 60, 50, 50, 50},
+        {50, 50, 50, 60, 60, 10, 60, 60, 50, 50, 50},
+        {50, 50, 50, 60, 60, 10, 60, 60, 50, 50, 50},
+        {50, 50, 50, 60, 60, 10, 60, 60, 50, 50, 50},
+        {50, 50, 50, 60, 60, 10, 60, 60, 50, 50, 50},
+        {50, 50, 50, 60, 60, 10, 60, 60, 50, 50, 50},
+        {50, 50, 50, 60, 60, 10, 60, 60, 50, 50, 50},
+        {50, 50, 50, 60, 60, 10, 60, 60, 50, 50, 50}
+    };
+
+    int kernel_size = 3;
+    double standard_deviation = 100;
+
+    vector<vector<int>> blurred_image = MyGaussianBlur(input_image, kernel_size, standard_deviation);
+
+    // Вывод размытого изображения на консоль
+    for (const auto& row : blurred_image) {
+        for (int pixel : row) {
+            cout << pixel << " ";
+        }
+        cout << endl;
+    }
+
+    return 0;
+}
